@@ -1,4 +1,4 @@
-import {Controller} from '@blitzjs/core'
+import {Controller} from '../dist'
 import {validContent} from '../utils/contentFilter'
 
 export const CommentsController = Controller(({db}) => ({
@@ -17,7 +17,8 @@ export const CommentsController = Controller(({db}) => ({
         post: {
           connect: {id: parseInt(params.query.postId)},
         },
-      },
+        // TODO FIX THIS TYPE
+      } as any,
     })
 
     return {
