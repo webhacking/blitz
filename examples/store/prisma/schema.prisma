@@ -6,7 +6,7 @@
 // The `url` field must contain the connection string to your DB.
 // Learn more about connection strings for your DB: https://pris.ly/d/connection-strings
 datasource db {
-  provider = "sqlite" // other options are: "mysql" and "sqlite"
+  provider = "sqlite"
   url      = "file:../tmp/db.sqlite"
 }
 // Other examples for connection strings are:
@@ -27,16 +27,35 @@ generator client {
 // 3. Run `prisma2 generate` to generate Prisma Client JS
 // 4. Start using Prisma Client JS in your application
 
+model Store {
+  id    Int     @id @default(autoincrement())
+  name      String?
+  // memberships Membership[]
+  products Product[]
+}
+
+// model Membership {
+//   id    Int     @id @default(autoincrement())
+//   store     Store
+//   user      User
+//   name      String?
+//   roles    String @default("")
+// }
+//
+// model User {
+//  id    Int     @id @default(autoincrement())
+//  name      String
+//  email  String
+//  membership Membership
+// }
+
 model Product {
   id    Int     @id @default(autoincrement())
+  store     Store @relation(fields: [storeId], references: [id])
+  storeId  Int
   name      String?
   description String?
   price    Int?
 }
 
-//model User {
-//  id    Int     @id @default(autoincrement())
-//  email: String
-//  roles: String @default('')
-//}
 
