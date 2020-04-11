@@ -2477,15 +2477,15 @@
   dependencies:
     "@types/node" ">= 8"
 
-"@prisma/cli@2.0.0-alpha.980":
-  version "2.0.0-alpha.980"
-  resolved "https://registry.yarnpkg.com/@prisma/cli/-/cli-2.0.0-alpha.980.tgz#d75170cb7c0c68205f2252a42d637fceced8e44c"
-  integrity sha512-BlfDS+SXT/eWbfJpxfqESQPaT7vOLp+iI8fN3qO7XmBXqFAk4N2+vDYdwkhInImlb9nzwQS0K059WR7E0L8bkQ==
+"@prisma/cli@2.0.0-alpha.1036":
+  version "2.0.0-alpha.1036"
+  resolved "https://registry.yarnpkg.com/@prisma/cli/-/cli-2.0.0-alpha.1036.tgz#8149aad8b778c8ddbf2a1582c407ff6074d99205"
+  integrity sha512-rRYmdN6wfTWNf9lGjgkIQohBD84quCb6nisDpH3mPx7o40ncrlUm3Vw2++Okr+uZAISx+OdxR0wmCsChmEvRGw==
 
-"@prisma/client@2.0.0-alpha.980":
-  version "2.0.0-alpha.980"
-  resolved "https://registry.yarnpkg.com/@prisma/client/-/client-2.0.0-alpha.980.tgz#195a86c4a1e233dbc0d62892f9eb2c30e58c5f87"
-  integrity sha512-L+nQEF5X6AIJ/ngd2q5fSd3i/IzjULRXZCNJ2A/c5PmyDVcJqKAhoG8Y0GTXpY3V3a0eJoCl759H34OsfJ71fg==
+"@prisma/client@2.0.0-alpha.1036":
+  version "2.0.0-alpha.1036"
+  resolved "https://registry.yarnpkg.com/@prisma/client/-/client-2.0.0-alpha.1036.tgz#a1f875921ce94beb679a9b49c4c221b1c8e9a8ac"
+  integrity sha512-4aHZw6l59JYbKxNANHIvSmjVuGudeo83azSSRiP+zs6pjBdCFp2JNGbYDHaRWziFsl0mpeBrHvG92k2LI+r/Rw==
 
 "@prisma/client@2.0.0-preview024":
   version "2.0.0-preview024"

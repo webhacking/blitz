@@ -10,15 +10,15 @@
     "db:setup": "prisma2 generate && prisma2 migrate up --experimental",
     "db:migrate": "prisma2 migrate save --experimental && prisma2 migrate up --experimental",
     "build": "blitz build",
-    "test": "jest --coverage",
+    "test": "jest",
     "test:watch": "jest --watch"
   },
   "dependencies": {
     "@blitzjs/cli": "*",
     "@blitzjs/core": "*",
     "@blitzjs/server": "*",
-    "@prisma/cli": "2.0.0-alpha.980",
-    "@prisma/client": "2.0.0-alpha.980",
+    "@prisma/cli": "2.0.0-alpha.1036",
+    "@prisma/client": "2.0.0-alpha.1036",
     "formik": "2.1.4",
     "next": "^9.3.0",
     "react": "16.12.0",
