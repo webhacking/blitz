@@ -1,20 +1,20 @@
-import {unlink} from './unlink'
-import {dest} from 'vinyl-fs'
-import pagesFolder from './rules/pages-folder'
-import rpc from './rules/rpc'
-import {Manifest, createManifestFile, setManifestEntry} from './manifest'
-import {watch} from './watch'
 import {FSWatcher} from 'chokidar'
-import {Readable, pipeline} from 'readable-stream'
-import gulpIf from 'gulp-if'
-import File from 'vinyl'
 import fg from 'fast-glob'
-import {remove, pathExists, ensureDir} from 'fs-extra'
+import gulpIf from 'gulp-if'
+import {pipeline, Readable} from 'readable-stream'
+import File from 'vinyl'
+import {dest} from 'vinyl-fs'
 import {ciLog} from '../ciLog'
-import {runRule} from './rules-runner'
-import through from 'through2'
 import {checkDuplicateRoutes} from './check-duplicate-routes'
 import {checkNestedApi} from './check-nested-api'
+import {createManifestFile, Manifest, setManifestEntry} from './manifest'
+import {runRule} from './rules-runner'
+import {pagesFolder} from './rules/pages-folder'
+import {rpc} from './rules/rpc'
+import {countStream} from './streams/count-stream'
+import {unlink} from './streams/unlink'
+import {clean} from './tasks/clean'
+import {watch} from './watch'
 
 type SynchronizeFilesInput = {
   src: string
@@ -33,10 +33,10 @@ type SynchronizeFilesOutput = {
 }
 
 // TODO: handle files possibly corrupted out of sync
-//          * how can I know that an entry is out of sync?
-//            * add stat info modified date in the manifest
-//            * stat the entry for modified date ahead of time
-//            * if the dates are different then the entry is invalid and should be waited on
+//  * how can I know that an entry is out of sync?
+//   1. add stat info modified date in the manifest
+//   2. stat the entry for modified date ahead of time
+//   3. if the dates are different then the entry is invalid and should be waited on
 
 export async function synchronizeFiles({
   dest: destPath,
@@ -62,13 +62,15 @@ export async function synchronizeFiles({
   const manifest = Manifest.create()
   const {stream, watcher} = watch(includePaths, options)
 
+  // TODO:  This always cleans we should workout how
+  //        to avoid blowing everything away
   await clean(destPath)
 
   return await new Promise((resolve, reject) => {
     pipeline(
       stream,
 
-      // Rules
+      // File Transform Rules
       runRule(pagesFolder({srcPath})),
       runRule(rpc({srcPath})),
 
@@ -79,7 +81,10 @@ export async function synchronizeFiles({
       setManifestEntry(manifest),
       createManifestFile(manifest, manifestPath),
       gulpIf(writeManifestFile, dest(srcPath)),
-      countStream((count) => {
+
+      // Resolve promise upon file count matching manifest
+      // TODO this will need adjustment for existing builds
+      countStream(count => {
         // TODO: How we know when a static build is finished and to return the promise needs attention
         if (count >= entries.length) {
           ciLog('Stream files have been created. Here is a manifest.', manifest.toObject())
@@ -97,7 +102,7 @@ export async function synchronizeFiles({
           })
         }
       }),
-      (err) => {
+      err => {
         reject(err)
       },
     )
@@ -105,18 +110,3 @@ export async function synchronizeFiles({
 }
 
 const isUnlinkFile = (file: File) => file.event === 'unlink' || file.event === 'unlinkDir'
-
-async function clean(path: string) {
-  if (await pathExists(path)) {
-    await remove(path)
-  }
-  return await ensureDir(path)
-}
-
-const countStream = (cb: (count: number) => void) => {
-  let count = 0
-  return through.obj((_, __, next) => {
-    cb(++count)
-    next()
-  })
-}
