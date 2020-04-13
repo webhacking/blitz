@@ -8,12 +8,10 @@ import {ciLog} from '../ciLog'
 import {checkDuplicateRoutes} from './check-duplicate-routes'
 import {checkNestedApi} from './check-nested-api'
 import {createManifestFile, Manifest, setManifestEntry} from './manifest'
-import {runRule} from './rules-runner'
-import {pagesFolder} from './rules/pages-folder'
-import {rpc} from './rules/rpc'
-import {countStream} from './streams/count-stream'
-import {unlink} from './streams/unlink'
-import {clean} from './tasks/clean'
+import rulesDecorator from './rules'
+import {countStream} from './count-stream'
+import {unlink} from './unlink'
+import {clean} from './clean'
 import {watch} from './watch'
 
 type SynchronizeFilesInput = {
@@ -67,12 +65,13 @@ export async function synchronizeFiles({
   await clean(destPath)
 
   return await new Promise((resolve, reject) => {
-    pipeline(
-      stream,
+    const errorHandler = (err: any) => err && reject(err)
+    const rulesConfig = {srcPath, destPath, errorHandler}
+    const decoratedStream = rulesDecorator(rulesConfig)(stream)
 
-      // File Transform Rules
-      runRule(pagesFolder({srcPath})),
-      runRule(rpc({srcPath})),
+    pipeline(
+      // Run compilation rules
+      decoratedStream,
 
       // File sync
       gulpIf(isUnlinkFile, unlink(destPath), dest(destPath)),
@@ -102,9 +101,7 @@ export async function synchronizeFiles({
           })
         }
       }),
-      err => {
-        reject(err)
-      },
+      errorHandler,
     )
   })
 }
