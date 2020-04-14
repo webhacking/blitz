@@ -9,10 +9,12 @@ export default function configure(opts: {srcPath?: string}): Rule {
 
   // XXX: invariant - cannot have multiple paths
 
-  return (stream) =>
+  return stream =>
     stream.pipe(
       fileTransformStream((file: File) => {
+        // console.log({filePath: file.path})
         file.path = transformer(file.path)
+        // console.log({filePathAfter: file.path})
         return file
       }),
     )

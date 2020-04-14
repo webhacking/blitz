@@ -16,7 +16,7 @@ import {dev} from '../src/dev'
 import {resolve} from 'path'
 import {FSWatcher} from 'chokidar'
 import {remove, pathExists} from 'fs-extra'
-import directoryTree from 'directory-tree'
+import {directoryTree} from './utils/tree-utils'
 
 describe('Dev command', () => {
   let watcher: FSWatcher
@@ -40,34 +40,13 @@ describe('Dev command', () => {
   it('should copy the correct files to the dev folder', async () => {
     const tree = directoryTree(devFolder)
     expect(tree).toEqual({
-      path: `${devFolder}`,
       name: '.blitz-rules',
       children: [
         {
-          path: `${devFolder}/pages`,
           name: 'pages',
-          children: [
-            {
-              path: `${devFolder}/pages/bar.tsx`,
-              name: 'bar.tsx',
-              size: 60,
-              extension: '.tsx',
-              type: 'file',
-            },
-            {
-              path: `${devFolder}/pages/foo.tsx`,
-              name: 'foo.tsx',
-              size: 60,
-              extension: '.tsx',
-              type: 'file',
-            },
-          ],
-          size: 120,
-          type: 'directory',
+          children: [{name: 'bar.tsx'}, {name: 'foo.tsx'}],
         },
       ],
-      size: 120,
-      type: 'directory',
     })
   })
 })

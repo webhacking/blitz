@@ -6,5 +6,6 @@ export const absolutePathTransform = (sourceFolder = '') => (transformer: (s: st
 ) => {
   const startingPath = relative(sourceFolder, filePath)
   const transformedPath = transformer(startingPath)
-  return resolve(sourceFolder, transformedPath)
+  const final = resolve(sourceFolder, transformedPath)
+  return final
 }

@@ -40,55 +40,16 @@ describe('Dev command', () => {
   it('should copy the correct files to the dev folder', async () => {
     const tree = directoryTree(rootFolder)
     expect(tree).toEqual({
+      name: 'dev',
       children: [
         {
-          children: [
-            {
-              extension: '',
-              name: 'one',
-              path: `${rootFolder}/.blitz-dev/one`,
-              size: 0,
-              type: 'file',
-            },
-            {
-              extension: '',
-              name: 'two',
-              path: `${rootFolder}/.blitz-dev/two`,
-              size: 0,
-              type: 'file',
-            },
-          ],
           name: '.blitz-dev',
-          path: `${rootFolder}/.blitz-dev`,
-          size: 0,
-          type: 'directory',
+          children: [{name: 'one'}, {name: 'two'}],
         },
-        {
-          extension: '',
-          name: '.now',
-          path: `${rootFolder}/.now`,
-          size: 18,
-          type: 'file',
-        },
-        {
-          extension: '',
-          name: 'one',
-          path: `${rootFolder}/one`,
-          size: 0,
-          type: 'file',
-        },
-        {
-          extension: '',
-          name: 'two',
-          path: `${rootFolder}/two`,
-          size: 0,
-          type: 'file',
-        },
+        {name: '.now'},
+        {name: 'one'},
+        {name: 'two'},
       ],
-      name: 'dev',
-      path: `${rootFolder}`,
-      size: 18,
-      type: 'directory',
     })
   })
 

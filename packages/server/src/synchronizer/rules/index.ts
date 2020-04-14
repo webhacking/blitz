@@ -1,8 +1,9 @@
 import pages from './pages'
 import rpc from './rpc'
-// import config from './blitz-config'
+import config from './config'
 import {Readable} from 'readable-stream'
 import {rulesPipeline} from './pipeline'
+import debugRule from './debug'
 
 type Config = {
   srcPath: string
@@ -16,7 +17,8 @@ export default function applyFileStreamRules({errorHandler, ...cfg}: Config) {
   const pipeline = [
     pages(cfg), 
     rpc(cfg), 
-    // config(cfg)
+    config(cfg),
+    debugRule,
   ]
 
   return (stream: Readable) => rulesPipeline(pipeline, errorHandler)(stream)

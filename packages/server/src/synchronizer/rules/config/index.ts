@@ -15,14 +15,14 @@ function createStubNextConfig(path: string) {
   })
 }
 
-function createBlitzConfigLoader(path: string) {
+function createBlitzConfigLoader() {
   const blitzConfigLoader = `
 const {withBlitz} = require('@blitzjs/server');
 const config = require('./blitz.config.js');
 module.exports = withBlitz(config);  
 `
   return new File({
-    path: resolve(path, 'next.config.js'),
+    path: 'next.config.js',
     contents: Buffer.from(blitzConfigLoader),
   })
 }
@@ -31,18 +31,24 @@ const isConfigFileRx = /(next|blitz)\.config\.js$/
 
 export default function configure({srcPath, entries}: Args): Rule {
   // XXX: invariant - cannot have two config files
-  return (stream) => {
-    const configNotFound = !entries.find((entry) => isConfigFileRx.test(entry))
+  const configNotFound = !entries.find(entry => isConfigFileRx.test(entry))
 
+  return (stream, headStream) => {
     if (configNotFound) {
-      stream.push(createStubNextConfig(srcPath))
+      headStream.push(createStubNextConfig(srcPath))
     }
 
     return stream.pipe(
-      fileTransformStream((file) => {
-        if (!isConfigFileRx.test(file.path)) return file
-        file.path = file.path.replace(isConfigFileRx, 'blitz.config.js')
-        return [file, createBlitzConfigLoader(srcPath)]
+      fileTransformStream(file => {
+        const notConfigFile = !isConfigFileRx.test(file.path)
+
+        if (notConfigFile) {
+          return file
+        }
+
+        file.path = 'blitz.config.js'
+
+        return [file, createBlitzConfigLoader()]
       }),
     )
   }
