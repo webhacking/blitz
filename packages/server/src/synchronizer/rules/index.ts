@@ -1,9 +1,9 @@
 import pages from './pages'
 import rpc from './rpc'
-import config from './config'
+// import config from './config'
 import {Readable} from 'readable-stream'
 import {rulesPipeline} from './pipeline'
-import debugRule from './debug'
+// import debugRule from './debug'
 
 type Config = {
   srcPath: string
@@ -17,8 +17,8 @@ export default function applyFileStreamRules({errorHandler, ...cfg}: Config) {
   const pipeline = [
     pages(cfg), 
     rpc(cfg), 
-    config(cfg),
-    debugRule,
+    // config(cfg),
+    
   ]
 
   return (stream: Readable) => rulesPipeline(pipeline, errorHandler)(stream)

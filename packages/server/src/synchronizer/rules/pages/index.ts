@@ -2,19 +2,20 @@ import File from 'vinyl'
 import {absolutePathTransform} from '../utils'
 import {Rule} from '../types'
 import {fileTransformStream} from '../pipeline'
+// import {checkDuplicateRoutes} from './check-duplicate-routes'
+// import {checkNestedApi} from './check-nested-api'
 
-export default function configure(opts: {srcPath?: string}): Rule {
+export default function configure(opts: {entries: string[]; srcPath?: string}): Rule {
   const filePathTransformer = absolutePathTransform(opts.srcPath)
   const transformer = filePathTransformer(pathTransformer)
 
-  // XXX: invariant - cannot have multiple paths
+  // checkNestedApi(opts.entries)
+  // checkDuplicateRoutes(opts.entries)
 
   return stream =>
     stream.pipe(
       fileTransformStream((file: File) => {
-        // console.log({filePath: file.path})
         file.path = transformer(file.path)
-        // console.log({filePathAfter: file.path})
         return file
       }),
     )

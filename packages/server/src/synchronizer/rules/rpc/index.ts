@@ -11,7 +11,7 @@ export default function configure({srcPath}: Args): Rule {
   const getRpcPath = fileTransformer(rpcPath)
   const getRpcHandlerPath = fileTransformer(handlerPath)
 
-  return (stream) =>
+  return stream =>
     stream.pipe(
       fileTransformStream((file: File) => {
         if (!isRpcPath(file.path)) return [file]

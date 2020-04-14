@@ -5,6 +5,7 @@ import {nextStartDev} from './next-utils'
 
 export async function dev(config: ServerConfig) {
   const {
+    watch = true,
     rootFolder,
     nextBin,
     devFolder,
@@ -19,10 +20,10 @@ export async function dev(config: ServerConfig) {
   const src = resolve(rootFolder)
   const dest = resolve(rootFolder, devFolder)
 
-  const {watcher, manifest} = await synchronizeFiles({
+  const {manifest} = await synchronizeFiles({
     src,
     dest,
-    watch: true,
+    watch: watch,
     ignoredPaths,
     includePaths,
     manifestPath,
@@ -30,6 +31,4 @@ export async function dev(config: ServerConfig) {
   })
 
   nextStartDev(nextBin, dest, manifest, devFolder)
-
-  return watcher
 }

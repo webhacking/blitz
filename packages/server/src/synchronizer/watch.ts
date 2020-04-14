@@ -1,34 +1,27 @@
-import File from 'vinyl'
+// import File from 'vinyl'
 import chokidar from 'chokidar'
 import {Readable} from 'readable-stream'
-import vinyl from 'vinyl-file'
+// import vinyl from 'vinyl-file'
 import {Stats} from 'fs'
 import {normalize, resolve} from 'path'
 import pathIsAbsolute from 'path-is-absolute'
 
-export const watch = (includePaths: string[] | string, options: chokidar.WatchOptions) => {
-  function resolveFilepath(filepath: string) {
-    if (pathIsAbsolute(filepath)) {
-      return normalize(filepath)
-    }
-    return resolve(options.cwd || process.cwd(), filepath)
+export function resolveFilepath(filepath: string, cwd?: string) {
+  if (pathIsAbsolute(filepath)) {
+    return normalize(filepath)
   }
+  return resolve(cwd || process.cwd(), filepath)
+}
 
+export const watch = (includePaths: string[] | string, options: chokidar.WatchOptions) => {
   const stream = new Readable({
     objectMode: true,
     read() {},
   })
 
-  function processEvent(evt: string) {
-    return async (filepath: string, _stat: Stats) => {
-      filepath = resolveFilepath(filepath)
-
-      const fileOpts = Object.assign({}, options, {path: filepath})
-      const file =
-        evt === 'unlink' || evt === 'unlinkDir' ? new File(fileOpts) : await vinyl.read(filepath, fileOpts)
-
-      file.event = evt
-      stream.push(file)
+  function processEvent(event: string) {
+    return async (path: string, stat: Stats) => {
+      stream.push({path, stat, event})
     }
   }
 
@@ -37,5 +30,5 @@ export const watch = (includePaths: string[] | string, options: chokidar.WatchOp
   watcher.on('change', processEvent('change'))
   watcher.on('unlink', processEvent('unlink'))
 
-  return {stream, watcher}
+  return stream
 }

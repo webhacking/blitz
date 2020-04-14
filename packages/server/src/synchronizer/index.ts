@@ -1,17 +1,14 @@
-import {FSWatcher} from 'chokidar'
+// import {FSWatcher} from 'chokidar'
 import fg from 'fast-glob'
 import gulpIf from 'gulp-if'
-import {pipeline, Readable} from 'readable-stream'
+import {pipeline} from 'readable-stream'
 import File from 'vinyl'
 import {dest} from 'vinyl-fs'
-import {ciLog} from '../ciLog'
-import {checkDuplicateRoutes} from './check-duplicate-routes'
-import {checkNestedApi} from './check-nested-api'
 import {createManifestFile, Manifest, setManifestEntry} from './manifest'
-import rulesDecorator from './rules'
-import {countStream} from './count-stream'
+import rulesPipeline from './rules'
 import {unlink} from './unlink'
 import {clean} from './clean'
+import {createFileQueue} from './file-queue'
 import {watch} from './watch'
 
 type SynchronizeFilesInput = {
@@ -25,16 +22,14 @@ type SynchronizeFilesInput = {
 }
 
 type SynchronizeFilesOutput = {
-  watcher: FSWatcher
-  stream: Readable
   manifest: Manifest
 }
 
-// TODO: handle files possibly corrupted out of sync
-//  * how can I know that an entry is out of sync?
-//   1. add stat info modified date in the manifest
-//   2. stat the entry for modified date ahead of time
-//   3. if the dates are different then the entry is invalid and should be waited on
+const errorHandler = (err: any) => {
+  if (err) {
+    throw new Error(err)
+  }
+}
 
 export async function synchronizeFiles({
   dest: destPath,
@@ -45,65 +40,62 @@ export async function synchronizeFiles({
   writeManifestFile,
   ...opts
 }: SynchronizeFilesInput): Promise<SynchronizeFilesOutput> {
-  const options = {
-    ignored: ignoredPaths,
-    persistent: opts.watch,
-    ignoreInitial: false,
-    cwd: srcPath,
+  const manifest = Manifest.create()
+
+  // Cannot use stream mode because we need entryPaths in rules
+  const entries = fg.sync(includePaths, {ignore: ignoredPaths, cwd: srcPath, stats: true})
+  const entryPaths = entries.map(e => e.path)
+  const queue = createFileQueue(srcPath)
+
+  // Consume entries
+  for (let entry of entries) {
+    queue.in.write(entry)
   }
 
-  const entries = fg.sync(includePaths, {ignore: options.ignored, cwd: options.cwd})
+  // Then start up watcher listen for subsequent file events
+  if (opts.watch) {
+    watch(includePaths, {
+      ignored: ignoredPaths,
+      persistent: true,
+      ignoreInitial: true,
+      cwd: srcPath,
+    }).pipe(queue.in)
+  }
 
-  checkNestedApi(entries)
-  checkDuplicateRoutes(entries)
-
-  const manifest = Manifest.create()
-  const {stream, watcher} = watch(includePaths, options)
-
-  // TODO:  This always cleans we should workout how
-  //        to avoid blowing everything away
+  // clean for now
+  // TODO: remove this
   await clean(destPath)
 
-  return await new Promise((resolve, reject) => {
-    const errorHandler = (err: any) => err && reject(err)
-    const rulesConfig = {srcPath, destPath, entries, errorHandler}
-    const decoratedStream = rulesDecorator(rulesConfig)(stream)
-
+  return await new Promise(resolve => {
     pipeline(
       // Run compilation rules
-      decoratedStream,
+      rulesPipeline({
+        srcPath,
+        destPath,
+        entries: entryPaths,
+        errorHandler,
+      })(queue.in),
 
       // File sync
       gulpIf(isUnlinkFile, unlink(destPath), dest(destPath)),
+
+      // This tracks to see if we are ready
+      queue.trackDone,
 
       // Maintain build manifest
       setManifestEntry(manifest),
       createManifestFile(manifest, manifestPath),
       gulpIf(writeManifestFile, dest(srcPath)),
 
-      // Resolve promise upon file count matching manifest
-      // TODO this will need adjustment for existing builds
-      countStream(count => {
-        // TODO: How we know when a static build is finished and to return the promise needs attention
-        if (count >= entries.length) {
-          ciLog('Stream files have been created. Here is a manifest.', manifest.toObject())
-
-          // Close watcher to avoid extra watching
-          // when run in non watch mode
-          if (!opts.watch) {
-            watcher.close()
-          }
-
-          resolve({
-            stream,
-            watcher,
-            manifest,
-          })
-        }
-      }),
+      // error handler needs to be here too
       errorHandler,
-    )
+    ).on('data', () => {
+      if (queue.ready()) {
+        resolve({manifest})
+      }
+    })
   })
 }
-
-const isUnlinkFile = (file: File) => file.event === 'unlink' || file.event === 'unlinkDir'
+const isUnlinkFile = (file: File) => {
+  return file.event === 'unlink' || file.event === 'unlinkDir'
+}

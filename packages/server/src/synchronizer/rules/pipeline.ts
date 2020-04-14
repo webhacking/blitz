@@ -5,6 +5,13 @@ import {Readable, Transform} from 'readable-stream'
 
 export function fileTransformStream(fn: FileTransform) {
   return through.obj(function(file: File, encoding, done) {
+    // Pass through any ready events without processing them
+    if (file.event === 'ready') {
+      console.log('READY EVENT PASSED THROUGH')
+      done(null, file)
+      return
+    }
+
     const ret = fn(file, encoding)
     const files = Array.isArray(ret) ? ret : [ret]
     for (file of files) {
