@@ -4,6 +4,7 @@ import File from 'vinyl'
 import crypto from 'crypto'
 import {Transform} from 'readable-stream'
 import {Stats} from 'fs'
+import chalk from 'chalk'
 
 // entry point for fileTrasform
 function equals<T>(as: Set<T>, bs: Set<T>) {
@@ -42,19 +43,35 @@ class QueueIn extends Transform {
     if (event) file.event = event
 
     this.todo.add(id)
+    console.log('todo>', this.todo.size, file.id, file.path.slice(-30))
 
     next(undefined, file)
   }
 }
 
 class TrackDone extends Transform {
-  constructor(private done: Set<string>) {
+  constructor(private todo: Set<string>, private done: Set<string>, private onReady: () => void) {
     super({objectMode: true})
   }
 
-  _transform(file: {id: string}, _: any, next: Function) {
+  _transform(file: {path: string; id: string}, _: any, next: Function) {
+    if (!file.id) {
+      console.log('No file id...')
+      next()
+      return
+    }
+
     this.done.add(file.id)
+
+    if (this.isReady()) {
+      this.onReady()
+    }
+    console.log(chalk.red('done>'), this.done.size, file.id, file.path.slice(-30))
     next(undefined, file)
+  }
+
+  isReady() {
+    return equals(this.todo, inter(this.todo, this.done))
   }
 }
 
@@ -64,12 +81,16 @@ export function createFileQueue(srcPath: string) {
   const done = new Set<string>()
 
   const input = new QueueIn(todo, done, srcPath)
-
-  const trackDone = new TrackDone(done)
-
-  function ready() {
-    return equals(todo, inter(todo, done))
+  input.on('error', err => {
+    console.log(err)
+  })
+  function onReady(readyCallback: () => void) {
+    const trackDone = new TrackDone(todo, done, readyCallback)
+    trackDone.on('error', err => {
+      console.log(err)
+    })
+    return trackDone
   }
 
-  return {in: input, trackDone, ready}
+  return {in: input, onReady}
 }

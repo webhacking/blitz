@@ -19,7 +19,7 @@ export async function dev(config: ServerConfig) {
   })
   const src = resolve(rootFolder)
   const dest = resolve(rootFolder, devFolder)
-
+  console.log('STARTING')
   const {manifest} = await synchronizeFiles({
     src,
     dest,
@@ -29,6 +29,6 @@ export async function dev(config: ServerConfig) {
     manifestPath,
     writeManifestFile,
   })
-
+  console.log('FINISHING')
   nextStartDev(nextBin, dest, manifest, devFolder)
 }

@@ -1,5 +1,5 @@
 import pages from './pages'
-import rpc from './rpc'
+// import rpc from './rpc'
 // import config from './config'
 import {Readable} from 'readable-stream'
 import {rulesPipeline} from './pipeline'
@@ -16,7 +16,7 @@ export default function applyFileStreamRules({errorHandler, ...cfg}: Config) {
   // prettier-ignore
   const pipeline = [
     pages(cfg), 
-    rpc(cfg), 
+    // rpc(cfg), 
     // config(cfg),
     
   ]

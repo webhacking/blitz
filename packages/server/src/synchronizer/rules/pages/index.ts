@@ -15,7 +15,12 @@ export default function configure(opts: {entries: string[]; srcPath?: string}): 
   return stream =>
     stream.pipe(
       fileTransformStream((file: File) => {
-        file.path = transformer(file.path)
+        try {
+          // console.log('Page is transformed' + file.path)
+          file.path = transformer(file.path)
+        } catch (err) {
+          console.log(err)
+        }
         return file
       }),
     )

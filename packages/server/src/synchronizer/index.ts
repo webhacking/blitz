@@ -4,12 +4,14 @@ import gulpIf from 'gulp-if'
 import {pipeline} from 'readable-stream'
 import File from 'vinyl'
 import {dest} from 'vinyl-fs'
-import {createManifestFile, Manifest, setManifestEntry} from './manifest'
-import rulesPipeline from './rules'
+// import {createManifestFile, Manifest, setManifestEntry} from './manifest'
+import {Manifest} from './manifest'
+import initializeRules from './rules'
 import {unlink} from './unlink'
-import {clean} from './clean'
+// import {clean} from './clean'
 import {createFileQueue} from './file-queue'
-import {watch} from './watch'
+import {rejects} from 'assert'
+// import {watch} from './watch'
 
 type SynchronizeFilesInput = {
   src: string
@@ -25,75 +27,86 @@ type SynchronizeFilesOutput = {
   manifest: Manifest
 }
 
-const errorHandler = (err: any) => {
-  if (err) {
-    throw new Error(err)
-  }
-}
-
-export async function synchronizeFiles({
+export function synchronizeFiles({
   dest: destPath,
   src: srcPath,
   includePaths,
   ignoredPaths,
-  manifestPath,
-  writeManifestFile,
-  ...opts
-}: SynchronizeFilesInput): Promise<SynchronizeFilesOutput> {
-  const manifest = Manifest.create()
+}: // manifestPath,
+// writeManifestFile,
+// ...opts
+SynchronizeFilesInput): Promise<SynchronizeFilesOutput> {
+  return new Promise(() => {
+    console.log('START')
+    // const manifest = Manifest.create()
 
-  // Cannot use stream mode because we need entryPaths in rules
-  const entries = fg.sync(includePaths, {ignore: ignoredPaths, cwd: srcPath, stats: true})
-  const entryPaths = entries.map(e => e.path)
-  const queue = createFileQueue(srcPath)
+    // Cannot use stream mode because we need entryPaths in rules
+    const entries = fg.sync(includePaths, {ignore: ignoredPaths, cwd: srcPath, stats: true})
+    const entryPaths = entries.map(e => e.path)
+    const queue = createFileQueue(srcPath)
+    // entries.forEach((entry, index) => {
+    //   console.log(index, entry.path)
+    // })
+    const errorHandler = (err: any) => {
+      if (err) {
+        rejects(err)
+      }
+    }
 
-  // Consume entries
-  for (let entry of entries) {
-    queue.in.write(entry)
-  }
+    const rules = initializeRules({
+      srcPath,
+      destPath,
+      entries: entryPaths,
+      errorHandler,
+    })(queue.in)
 
-  // Then start up watcher listen for subsequent file events
-  if (opts.watch) {
-    watch(includePaths, {
-      ignored: ignoredPaths,
-      persistent: true,
-      ignoreInitial: true,
-      cwd: srcPath,
-    }).pipe(queue.in)
-  }
+    // Consume entries
+    for (let entry of entries) {
+      queue.in.write(entry)
+    }
+    // rules.pause()
+    // Then start up watcher listen for subsequent file events
+    // if (opts.watch) {
+    //   watch(includePaths, {
+    //     ignored: ignoredPaths,
+    //     persistent: true,
+    //     ignoreInitial: true,
+    //     cwd: srcPath,
+    //   }).pipe(queue.in)
+    // }
 
-  // clean for now
-  // TODO: remove this
-  await clean(destPath)
-
-  return await new Promise(resolve => {
+    // clean for now
+    // TODO: Work out how to remove this
+    // clean(destPath)
+    //   .then(() => {
+    console.log('about to pipeilne')
     pipeline(
       // Run compilation rules
-      rulesPipeline({
-        srcPath,
-        destPath,
-        entries: entryPaths,
-        errorHandler,
-      })(queue.in),
+      rules,
 
       // File sync
       gulpIf(isUnlinkFile, unlink(destPath), dest(destPath)),
 
       // This tracks to see if we are ready
-      queue.trackDone,
+      // queue.onReady(() => {
+      //   console.log('READY!!!')
+      //   resolve({manifest})
+      // }),
 
       // Maintain build manifest
-      setManifestEntry(manifest),
-      createManifestFile(manifest, manifestPath),
-      gulpIf(writeManifestFile, dest(srcPath)),
+      // TODO: pass through fileEvent so we can push the trackDone to the end
+      // setManifestEntry(manifest),
+      // createManifestFile(manifest, manifestPath),
+      // gulpIf(writeManifestFile, dest(srcPath)),
 
       // error handler needs to be here too
       errorHandler,
-    ).on('data', () => {
-      if (queue.ready()) {
-        resolve({manifest})
-      }
-    })
+    )
+    // })
+    // .catch(err => {
+    //   console.log('ERRROOOOOOORR')
+    //   console.log(err)
+    // })
   })
 }
 const isUnlinkFile = (file: File) => {

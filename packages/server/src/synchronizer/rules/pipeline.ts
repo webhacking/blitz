@@ -5,18 +5,17 @@ import {Readable, Transform} from 'readable-stream'
 
 export function fileTransformStream(fn: FileTransform) {
   return through.obj(function(file: File, encoding, done) {
-    // Pass through any ready events without processing them
-    if (file.event === 'ready') {
-      console.log('READY EVENT PASSED THROUGH')
-      done(null, file)
-      return
+    let ret
+    try {
+      ret = fn(file, encoding)
+      const files = Array.isArray(ret) ? ret : [ret]
+      for (file of files) {
+        this.push(file)
+      }
+    } catch (err) {
+      console.log({err})
     }
 
-    const ret = fn(file, encoding)
-    const files = Array.isArray(ret) ? ret : [ret]
-    for (file of files) {
-      this.push(file)
-    }
     done()
   }) as Transform
 }
