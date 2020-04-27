@@ -1,74 +1,49 @@
 import spawn from "cross-spawn"
+import { createWriteStream, promises, WriteStream } from "fs"
 import { NextApiRequest, NextApiResponse } from "next"
+import { join } from "path"
 
-let output = ""
-
-const runScript = (command: string, args: string[] | undefined, callback: any) => {
+const runScript = (
+  command: string,
+  args: string[] | undefined,
+  logStream: WriteStream,
+  callback: (exitCode: number) => void
+) => {
+  // this doesn’t actually work (it creates somewhere in .blitz). how do we get the right path?
   const child = spawn(command, args, { cwd: process.cwd() })
 
   if (child.stdout) {
-    child.stdout.setEncoding("utf8")
+    child.stdout.setEncoding("utf-8")
     child.stdout.on("data", (data) => {
-      data = data.toString()
-      output += data
+      logStream.write(data)
     })
   }
 
   if (child.stderr) {
-    child.stderr.setEncoding("utf8")
+    child.stderr.setEncoding("utf-8")
     child.stderr.on("data", (data) => {
-      data = data.toString()
-      output += data
+      logStream.write(data)
     })
   }
 
-  child.on("close", (code) => {
-    callback(output, code)
+  child.on("close", (exitCode) => {
+    logStream.end()
+    callback(exitCode)
   })
 }
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method === "GET") {
+    const output = await promises.readFile(`${req.query.id}.txt`, "utf-8")
+
     return res.status(200).json({ output })
   } else if (req.method === "POST") {
-    runScript("mkdir", [req.body.name], (output: string, exitCode: number) => {
-      return res.status(200).json({ output, exitCode })
+    const logStream = createWriteStream(`${req.body.id}.txt`, { flags: "a" })
+
+    runScript("blitz", ["new", req.body.name], logStream, (exitCode: number) => {
+      return res.status(200).json({ output: "hi", exitCode })
     })
   }
 
   return res.status(404)
 }
-
-// import { spawn } from "node-pty"
-// import { NextApiRequest, NextApiResponse } from "next"
-
-// let output = ""
-
-// const runScript = (command: string, args: string | string[], callback: any) => {
-//   const child = spawn(command, args, {
-//     name: "xterm-color",
-//     cols: 80,
-//     rows: 30,
-//     cwd: process.cwd(),
-//   })
-
-//   child.on("data", (data) => {
-//     output += data
-//   })
-
-//   child.on("exit", (code) => {
-//     callback(output, code)
-//   })
-// }
-
-// export default async (req: NextApiRequest, res: NextApiResponse) => {
-//   if (req.method === "GET") {
-//     return res.status(200).json({ output })
-//   } else if (req.method === "POST") {
-//     runScript("yarn", [], (output: string, exitCode: number) => {
-//       return res.status(200).json({ output, exitCode })
-//     })
-//   }
-
-//   return res.status(404)
-// }
