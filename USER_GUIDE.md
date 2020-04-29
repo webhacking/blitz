@@ -6,6 +6,8 @@ Before getting started, you should know **this is alpha software**. Blitz is inc
 
 If you have any issues at all, please [open an issue](https://github.com/blitz-js/blitz/issues/new/choose) or join the [Blitz slack](https://slack.blitzjs.com) and talk to us in the **#help** channel. If you get stuck and frustrated, please don't blame yourself. This user guide, and Blitz in general, is not yet fine-tuned for those with less experience. But eventually, it will be because this is very important to us.
 
+If you’re looking for a slower, more guided start to Blitz, read the [Blitz Beginner Tutorial](https://github.com/blitz-js/blitz/blob/canary/TUTORIAL.md).
+
 <br>
 
 ## Introduction
@@ -23,9 +25,6 @@ Blitz is built on Next.js, so if you are familiar with that, you will feel right
 ### Set Up Your Computer
 
 - [ ] You need Node.js 12 or newer
-- [ ] You need Postgres installed and running.
-
-  - On macOS, you can use `brew install postgres` or install [Postgres.app](https://postgresapp.com/)
 
 <br>
 
@@ -64,7 +63,7 @@ model Task {
    - If this fails, you need to change the `DATABASE_URL` value in `.env` to whatever is required by your Postgres installation.
 
 <br>
-   
+
 ### Scaffold out all the files your basic CRUD actions
 
 _CRUD = create, read, update, delete_
@@ -146,7 +145,7 @@ import ErrorBoundary from 'app/components/ErrorBoundary'
 function Product() {
   const router = useRouter()
   const id = parseInt(router.query.id as string)
-  const [product] = useQuery(getProduct, { where: { id }})
+  const [product] = useQuery(getProduct, {where: {id}})
 
   return <div>{product.name}</div>
 }
@@ -256,8 +255,9 @@ Blitz uses the `blitz.config.js` config file at the root of your project. This i
 2. For deploying serverless, you also need a connection pool. This is also relatively easy to set up on Digital Ocean.
    1. [Read the Digitial Ocean docs on setting up your connection pool](https://www.digitalocean.com/docs/databases/postgresql/how-to/manage-connection-pools/#creating-a-connection-pool?refcode=466ad3d3063d)
    2. Ensure you set your "Pool Mode" to be "Session" instead of "Transaction" (because of a bug in Prisma)
-3. Lastly, you need your entire database connection string. If you need, [read the Prisma docs on this](https://www.prisma.io/docs/reference/database-connectors/postgresql#connection-details).
+3. You need your entire database connection string. If you need, [read the Prisma docs on this](https://www.prisma.io/docs/reference/database-connectors/postgresql#connection-details).
    1. If deploying to serverless with a connection pool, make sure you get the connection string to your connection pool, not directly to the DB.
+4. You need to change the defined datasource in `db/schema.prisma` from SQLite to Postgres
 
 #### Serverless
 
