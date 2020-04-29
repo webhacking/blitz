@@ -1,8 +1,19 @@
-import { useState, FormEvent } from "react"
+import { useEffect, useState, FormEvent } from "react"
 import { animated, useTransition } from "react-spring"
 
 export const NewProjectModal = ({ isOpen, close }: { isOpen: boolean; close: () => void }) => {
   const [name, setName] = useState("")
+  const [path, setPath] = useState("")
+
+  useEffect(() => {
+    const fetchHomedir = async () => {
+      const res = await fetch("http://localhost:3000/api/homedir")
+      const json = await res.json()
+      setPath(json.homedir)
+    }
+
+    fetchHomedir()
+  }, [])
 
   const props = useTransition(isOpen, null, {
     from: { opacity: 0 },
@@ -68,8 +79,19 @@ export const NewProjectModal = ({ isOpen, close }: { isOpen: boolean; close: () 
                       autoFocus
                     />
 
+                    <label htmlFor="path" className="mt-4 block  text-sm leading-5 font-medium text-gray-700">
+                      Local path
+                    </label>
+                    <input
+                      id="path"
+                      value={path}
+                      onChange={(e) => setPath(e.target.value)}
+                      className="mt-1 form-input w-full"
+                    />
+
                     {/* This input was included in the original design spec. I’m not sure we want it 
-                        though, especially since that’s not something our CLI supports.
+                        though, especially since that’s not something our CLI supports. I’ve left it
+                        here mostly for myself, in case it needs to brought back.
                     */}
                     {/* <div className="mt-4">
                       <span className="block text-sm leading-5 font-medium text-gray-700">
